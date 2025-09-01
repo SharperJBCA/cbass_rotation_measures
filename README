@@ -1,0 +1,20 @@
+# Fitting the Rotation Measure Map 
+
+Dear future me, hopefully this is a useful summary of what is needed to create rotation measure maps in the future. 
+
+## Data Preperation
+
+What data will you need? 
+1) S-PASS, C-BASS and some flavour of Planck/WMAP 
+2) Other RM solutions are useful, for example the Hutschenruter 2022 (https://wwwmpa.mpa-garching.mpg.de/~ensslin/research/data/faraday2020.html)
+
+You will need to preprocess the data, which means: 
+1) Smoothing all maps to a common resolution (including variance maps)
+2) Making them all the same pixelisation
+3) Saving these maps to a numpy array that contains a dictionary describing the data with:
+{'I_smth','Q_smth','U_smth','II_smth','QQ_smth','UU_smth','frequency','fwhm','cal_error'} 
+
+To do this use the cosmology map preprocessing code found here: https://github.com/SharperJBCA/cosmology_map_preprocess
+
+## Running the code 
+
