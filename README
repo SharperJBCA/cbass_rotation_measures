@@ -18,3 +18,25 @@ To do this use the cosmology map preprocessing code found here: https://github.c
 
 ## Running the code 
 
+To run the code setup the different jobs in the run_rm_fits.py script. There are three lists that define the jobs: 
+
+- fit_funcs: A list of dictionaries that define the likelihood function and priors for a particular job. 
+    - func: name of the function 
+    - prior_name: a descriptive name for the fit that is stored in the filename and the header as PRNAME.
+    - extra_args: a dictionary of additional info needed for the fit function. These will be added to the header at the end. Add a '_' prefix to a key to not add this to the header (i.e., for large data sets) 
+
+- data_key_list: A list of lists. Each list contains the names of the datasets that will be fitted.
+
+- spass_correction: Functions needed to handle the C-BASS/S-PASS overlap region. 
+
+
+### Create new fitting functions 
+
+To create a new fitting function you need to create a class in the rm_fit_functions script and import it. Copy the structure of the fit_no_prior for a basic likelihood, and see how priors can be added. 
+
+Priors are stored as classes (MinMax and Gaussian). Priors are added to the priors variable when instantiating the likelihood class. The likelihood class lnlike assumes a standard gaussian posterior distribution but feel free to create a new class with a different minimisation function.
+
+### Headers 
+
+Headers for files are created by combining the "cards" dictionary in the "run_rm_fits" script with the default structure given in "create_header" function. The current header structure follows that of the C-BASS DR1 format. 
+
