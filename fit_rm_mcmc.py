@@ -100,12 +100,14 @@ def get_pixel_info(pol_angle_maps, pol_angle_errs, frequencies, wavelengths_orig
 
     return all_angles, all_errors, all_wavelengths, all_freqs
 
-def process_pixel(pixel_data, nburnin, nthin, nwalkers, nsteps, return_chains=False):
+def process_pixel(pixel_data, nburnin, nthin, nwalkers, nsteps, test_pixels, output_directory, return_chains=False):
     """
     Process a single pixel for MCMC fitting.
     """
     ipix, angles, errs, wavelengths, freqs, lnlike = pixel_data
 
+    # if not any([p==ipix for p in test_pixels]): 
+    #     return  ipix, ([hp.UNSEEN,hp.UNSEEN], [hp.UNSEEN,hp.UNSEEN], hp.UNSEEN, hp.UNSEEN, hp.UNSEEN, hp.UNSEEN)
     #if ipix != 20:
     #    return  ipix, ([hp.UNSEEN,hp.UNSEEN], [hp.UNSEEN,hp.UNSEEN], hp.UNSEEN, hp.UNSEEN, hp.UNSEEN, hp.UNSEEN)
     #if len(angles) <= 3:
@@ -140,15 +142,21 @@ def process_pixel(pixel_data, nburnin, nthin, nwalkers, nsteps, return_chains=Fa
     residuals = residuals**2/errs[None,:]**2 
     chi2 = np.sum(residuals,axis=1) 
     chi2 = np.median(chi2)
-    
-    # from matplotlib import pyplot 
-    # import sys 
-    # ax = pyplot.subplot()
-    # pyplot.errorbar(wavelengths**2, angles, yerr=errs, fmt='.')
-    # pyplot.plot(wavelengths**2,best_fit[0] + best_fit[1]*wavelengths**2,'k')
-    # pyplot.text(0.05,0.9, f'{best_fit[1]:.2f}', transform=ax.transAxes)
-    # pyplot.savefig('test.png')
-    
+
+    if any([p==ipix for p in test_pixels]): 
+        ax = plt.subplot()
+        plt.errorbar(wavelengths**2, angles, yerr=errs, fmt='.')
+        plt.plot(wavelengths**2,best_fit[0] + best_fit[1]*wavelengths**2,'k')
+        plt.text(0.05,0.9, f'{best_fit[1]:.2f}', transform=ax.transAxes)
+        l, b = hp.pix2ang(16,int(ipix),lonlat=True)
+        plt.text(0.05,0.15, f'l={l:.1f}\nb={b:.1f}', transform=ax.transAxes)
+        plt.savefig(f'{output_directory}/errorbar_p{ipix:05d}.png')
+        plt.close() 
+
+        corner.corner(flat_samples,labels=[r'$\theta_0$','RM'])
+        plt.savefig(f'{output_directory}/corner_p{ipix:05d}.png')
+        plt.close() 
+
     if return_chains:
         return ipix, (best_fit, error_fit, chi2, len(angles), angle_offset, templates, flat_samples )
 
@@ -162,6 +170,13 @@ def fit_rm_mcmc(pol_angle_maps,
                 nthin=15,
                 nwalkers=32,
                 nsteps=1000,
+                test_pixels=[
+                    hp.ang2pix(16,30.0,30.0,lonlat=True),
+                    hp.ang2pix(16,150,0.,lonlat=True),
+                    hp.ang2pix(16,120.,45.0,lonlat=True),
+                    hp.ang2pix(16,200.,45.0,lonlat=True),
+                    ],
+                output_directory='.',
                 n_processes=None):
     """
     Parallel version of RM fitting using MCMC methods plus the Hutschenreuter map as a prior.
@@ -200,7 +215,9 @@ def fit_rm_mcmc(pol_angle_maps,
         nburnin=nburnin,
         nthin=nthin,
         nwalkers=nwalkers,
-        nsteps=nsteps
+        nsteps=nsteps,
+        test_pixels=test_pixels,
+        output_directory=output_directory
     )
 
     

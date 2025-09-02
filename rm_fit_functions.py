@@ -41,7 +41,8 @@ class gaussian_prior:
 
     def __call__(self, x):
         x_0 = x[self.index] 
-        return -0.5 * (x_0 - self.mean)**2/self.sigma**2
+        chi2 = -0.5 * (x_0 - self.mean)**2/self.sigma**2
+        return chi2 
     
 
 class amplitude_prior:
@@ -60,7 +61,7 @@ class lnlike:
 
     def __init__(self, priors=[]):
 
-        self.priors=[]
+        self.priors=priors
 
     def lnlike(self, x, templates, data, errs):
         model = np.dot(templates,x)
@@ -73,7 +74,7 @@ class lnlike:
         return self.lnlike(x, templates, data, errs)
 
 
-def fit_no_prior(data_dict, data_keys=[], extra_args=[]): 
+def fit_no_prior(data_dict, data_keys=[], extra_args={}, output_directory='.'): 
 
     data_subset = {k:data_dict[k] for k in data_keys} 
 
@@ -98,7 +99,8 @@ def fit_no_prior(data_dict, data_keys=[], extra_args=[]):
             nburnin=nburnin,
             nthin=nthin,
             nsteps=nsteps,
-            nwalkers=nwalkers)
+            nwalkers=nwalkers,
+            output_directory=output_directory)
 
     return {
         'rm_map':rm_map,
@@ -107,9 +109,11 @@ def fit_no_prior(data_dict, data_keys=[], extra_args=[]):
         'ndata_map':ndata_map
     }
 
-def fit_hutschenruter_prior(data_dict, data_keys=[], extra_args=[]): 
+def fit_hutschenruter_prior(data_dict, data_keys=[], extra_args={}, output_directory='.'): 
 
-    hutschenruter_map, = extra_args
+    #hutschenruter_map, hutschen_prior = extra_args
+    hutschenruter_map = extra_args['data_rm_map']
+    hutschen_prior = extra_args['RMPSIG']
 
     data_subset = {k:data_dict[k] for k in data_keys} 
 
@@ -125,7 +129,7 @@ def fit_hutschenruter_prior(data_dict, data_keys=[], extra_args=[]):
 
     npix = len(data_dict[data_keys[0]]['I_smth'])
     lnlikes = [lnlike(
-        priors=[gaussian_prior(1,mean=-hutschenruter_map[ipix],sigma=10.0)]
+        priors=[gaussian_prior(1,mean=-hutschenruter_map[ipix],sigma=hutschen_prior)]
         ) for ipix in range(npix)] 
 
     rm_map, rm_errs, chi2_map, output_angle_map, output_angle_err_map, ndata_map, angle_offset_map = fit_rm_mcmc(
@@ -136,7 +140,8 @@ def fit_hutschenruter_prior(data_dict, data_keys=[], extra_args=[]):
             nburnin=nburnin,
             nthin=nthin,
             nsteps=nsteps,
-            nwalkers=nwalkers)
+            nwalkers=nwalkers,
+            output_directory=output_directory)
 
     return {
         'rm_map':rm_map,
@@ -145,9 +150,10 @@ def fit_hutschenruter_prior(data_dict, data_keys=[], extra_args=[]):
         'ndata_map':ndata_map
     }
 
-def fit_ttplot_prior(data_dict, data_keys=[], extra_args=[]): 
+def fit_ttplot_prior(data_dict, data_keys=[], extra_args={}, output_directory='.'): 
 
-    ttplot_map, = extra_args
+    #ttplot_map, = extra_args
+    ttplot_map = extra_args['data_tt_map']
 
     data_subset = {k:data_dict[k] for k in data_keys} 
 
@@ -174,7 +180,8 @@ def fit_ttplot_prior(data_dict, data_keys=[], extra_args=[]):
             nburnin=nburnin,
             nthin=nthin,
             nsteps=nsteps,
-            nwalkers=nwalkers)
+            nwalkers=nwalkers,
+            output_directory=output_directory)
 
     return {
         'rm_map':rm_map,

@@ -133,6 +133,8 @@ def create_header(data, data_keys=[], cards={}):
     return header 
 
 def create_output_directory(output_dst_root, data_keys, cards): 
-    output_filename = f'{output_dst_root}/rm_{data_keys[0]}_to_{data_keys[-1]}'
+    from datetime import datetime 
+    now = datetime.now().strftime('%Y-%m-%d:%H:%M:%S')
+    output_filename = f'{output_dst_root}/{now}/rm_{data_keys[0]}_to_{data_keys[-1]}'
     os.makedirs(output_filename,exist_ok=True)
     return output_filename

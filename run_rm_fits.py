@@ -21,15 +21,17 @@ def main():
     hut_rm_map = read_hutschenruter('../../CBASS_PolarisedTF/ancillary_data/hutschenruter/faraday_sky_w_ff.hdf5')
     tt_rm_map = hp.read_map('../notebooks/qu_correlations_figures/202508/QU_low_res_rm_map.fits') 
 
-    fit_funcs = [{'func':fit_no_prior,
-                  'prior_name':'none',
-                  'extra_args':[]},
-                  {'func':fit_hutschenruter_prior,
-                   'prior_name':'hutschenruter',
-                   'extra_args':[hut_rm_map]},
-                  {'func':fit_ttplot_prior,
-                   'prior_name':'ttplot',
-                   'extra_args':[tt_rm_map]}] 
+    fit_funcs = [
+        {'func':fit_no_prior,
+        'prior_name':'none',
+        'extra_args':{}},
+        {'func':fit_hutschenruter_prior,
+        'prior_name':'hutschenruter',
+        'extra_args':{'data_rm_map':0.5*hut_rm_map,'RMPSIG':20.}},
+        {'func':fit_ttplot_prior,
+        'prior_name':'ttplot',
+        'extra_args':{'data_tt_map':tt_rm_map,'RMPSIG':10.}}
+    ] 
     
     data_keys_list = [
         ['cbass005','wmap023','planck030'],
@@ -63,7 +65,6 @@ def main():
 
         data = spass_correction['func'](data) 
 
-        result = fit_info['func'](data, data_keys=data_keys, extra_args=fit_info['extra_args']) 
 
         
         cards = {
@@ -71,16 +72,17 @@ def main():
             'OLAPTYPE':(spass_correction['overlap_type'],'C-BASS/S-PASS overlap'),
             'PRNAME':(fit_info['prior_name'],'Prior applied on RMs')
         }
+        cards = {**cards, **{k:(v,'') for k,v in fit_info['extra_args'].items() if not 'data' in k}}
     
+        output_dst = create_output_directory(output_dst_root, data_keys, cards)
+        result = fit_info['func'](data, data_keys=data_keys, extra_args=fit_info['extra_args'], output_directory=output_dst) 
 
         header = create_header(data, data_keys=data_keys, 
                             cards=cards
         )
 
-        output_dst = create_output_directory(output_dst_root, data_keys, cards)
 
         plot_rm_map(output_dst, result, data, header, data_keys=data_keys)
-
         save_rm_map(output_dst, result, header, data, data_keys=data_keys)
 
 if __name__ == "__main__":
